@@ -76,5 +76,6 @@ public class ListGroupDto {
     }
 
     public ListGroupDto() {
+        // cause of Gson
     }
 }

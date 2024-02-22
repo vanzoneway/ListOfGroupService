@@ -12,14 +12,14 @@ import org.modelmapper.*;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
 
 
 @Service
 public class ListGroupService {
 
 
-    final private ModelMapper modelMapper;
+    private final ModelMapper modelMapper;
     private final ListGroupRepository listGroupRepository;
 
     public ListGroupService(ModelMapper modelMapper, ListGroupRepository listGroupRepository) {
@@ -32,7 +32,7 @@ public class ListGroupService {
         assert listGroupDto != null;
         List<ListGroupEntity> listGroupEntity = listGroupDto.stream()
                 .map(dto -> modelMapper.map(dto, ListGroupEntity.class))
-                .collect(Collectors.toList());
+                .toList();
         listGroupRepository.saveAll(listGroupEntity);
     }
 

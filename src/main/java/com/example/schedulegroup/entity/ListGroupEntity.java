@@ -81,6 +81,6 @@ public class ListGroupEntity {
     }
 
     public ListGroupEntity() {
-
+        // cause of Gson()
     }
 }
