@@ -44,19 +44,19 @@ Make sure you have the following installed:
 1. Clone the repository:
 
     ```bash
-    
+    git clone https://github.com/vanzoneway/ListOfGroupService.git
     ```
 
 2. Build the project:
 
     ```bash
-    
+    mvn clean install
     ```
 
 3. Run the application:
 
     ```bash
-    
+    java -jar target/ListOfGroups-0.0.1-SNAPSHOT.jar
     ```
 
 The application will start on `http://localhost:8080`.
@@ -65,5 +65,10 @@ The application will start on `http://localhost:8080`.
 
 ### Endpoints
 
+- **Get a list of all groups in BSUIR in JSON:**
+
+  ```http
+  GET /student-groups
+  ```
 
 
