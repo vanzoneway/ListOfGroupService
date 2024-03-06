@@ -1,6 +1,6 @@
-# Application for retrieving a list of all groups
+# Application for getting a schedule of the group in BSUIR
 
-This repository contains a simple REST API application that provides a list of all groups in BSUIR, using IIS API
+This repository contains a simple REST API application that provides the ability to obtain group schedules.
 
 ## Table of Contents
 
@@ -11,11 +11,12 @@ This repository contains a simple REST API application that provides a list of a
     - [Installation](#installation)
 - [Usage](#usage)
 - [Endpoints](#endpoints)
+- [Note](#note)
 
 
 ## Introduction
 
-This is a basic REST API application built using [Spring Boot](https://spring.io/projects/spring-boot) framework and [Maven](https://maven.apache.org). The application allows users to get a list of all groups in BSUIR by making HTTP requests, with help of Spring WebClient.
+This is a basic REST API application built using [Spring Boot](https://spring.io/projects/spring-boot) framework and [Maven](https://maven.apache.org). The application allows users to get a schedule of all groups in BSUIR by making HTTP requests, with help of Spring WebClient.
 
 ## Technologies Used
 
@@ -65,10 +66,31 @@ The application will start on `http://localhost:8080`.
 
 ### Endpoints
 
-- **Get a list of all groups in BSUIR in JSON:**
+- **Get a list of all employees in BSUIR in JSON and write it in Database MySQL:**
 
   ```http
-  GET /student-groups
+  GET /getEmployees
   ```
+
+  You have to do it as 1st step to get the schedule of group
+- 
+- **Get a schedule of group in BSUIR in JSON and write it in Database MySQL:**
+
+  ```http
+  GET /schedule/{groupNumber}
+  ```
+
+  Just write a group number in a body of HTTP-request.
+
+  Example:
+  ```http
+  GET /getEmployees
+  ```
+  ```http
+  GET /schedule/250502
+  ```
+  
+## Note
+Upon the first request to /getEmployees, all employees are saved to the MySQL Database. Subsequent requests will update the existing data. To retrieve the schedule of a group, the application fetches data from the IIS API during the initial request, and subsequently retrieves the data from the MySQL Database.
 
 
