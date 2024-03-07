@@ -66,28 +66,35 @@ The application will start on `http://localhost:8080`.
 
 ### Endpoints
 
-- **Get a list of all employees in BSUIR in JSON and write it in Database MySQL:**
+- **Writes all employees of BSUIR in MySQL:**
 
   ```http
-  GET /getEmployees
+  POST /getEmployees
   ```
 
   You have to do it as 1st step to get the schedule of group
-- 
+
 - **Get a schedule of group in BSUIR in JSON and write it in Database MySQL:**
 
   ```http
   GET /schedule/{groupNumber}
   ```
 
-  Just write a group number in a body of HTTP-request.
+- **Delete all information about group from MySQL:**
+
+  ```http
+  DELETE /removeGroupFromDatabase/{groupNumber}
+  ```
 
   Example:
   ```http
-  GET /getEmployees
+  POST /getEmployees
   ```
   ```http
   GET /schedule/250502
+  ```
+  ```http
+  DELETE /removeGroupFromDatabase/250502
   ```
   
 ## Note
