@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface InfoAboutNameGroupRepository extends JpaRepository<InfoAboutNameGroupEntity, Integer> {
         InfoAboutNameGroupEntity findByName(String name);
+
 }

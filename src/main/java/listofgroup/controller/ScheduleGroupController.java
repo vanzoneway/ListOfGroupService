@@ -1,8 +1,11 @@
 package listofgroup.controller;
 
+
 import listofgroup.dao.InfoAboutNameEmployeeRepository;
 import listofgroup.service.ScheduleGroupService;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,10 +17,11 @@ public class ScheduleGroupController {
     private final ScheduleGroupService scheduleGroupService;
     private final InfoAboutNameEmployeeRepository infoAboutNameEmployeeRepository;
 
-
-    public ScheduleGroupController(ScheduleGroupService scheduleGroupService, InfoAboutNameEmployeeRepository infoAboutNameEmployeeRepository) {
+    public ScheduleGroupController(ScheduleGroupService scheduleGroupService,
+                                   InfoAboutNameEmployeeRepository infoAboutNameEmployeeRepository) {
         this.scheduleGroupService = scheduleGroupService;
         this.infoAboutNameEmployeeRepository = infoAboutNameEmployeeRepository;
+
     }
 
 
@@ -32,5 +36,9 @@ public class ScheduleGroupController {
         return scheduleGroupService.getGeneralInfoGroupAsJsonString(groupNumber);
     }
 
+    @DeleteMapping("/removeGroupFromDatabase/{groupNumber}")
+    public ResponseEntity<String> removeGroup(@PathVariable String groupNumber) {
+        return scheduleGroupService.removeGroupFromDatabase(groupNumber);
+    }
 
 }

@@ -12,8 +12,11 @@ import listofgroup.model.InfoAboutNameGroupDto;
 import listofgroup.model.ScheduleDto;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.HashMap;
@@ -31,6 +34,21 @@ public class ScheduleGroupService {
 
     private final listofgroup.dao.InfoAboutNameEmployeeRepository infoAboutNameEmployeeRepository;
 
+    @Transactional
+    public ResponseEntity<String> removeGroupFromDatabase(String groupNumber) {
+        GeneralInfoGroupEntity generalInfoGroup = infoAboutNameGroupRepository.findByName(groupNumber).getGeneralInfoGroup();
+
+        if (generalInfoGroup != null) {
+            try {
+                generalInfoGroupRepository.delete(generalInfoGroup);
+                return ResponseEntity.ok("Group removed successfully");
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        } else {
+            return ResponseEntity.ok().build();
+        }
+    }
 
     public ScheduleGroupService(InfoAboutNameGroupRepository infoAboutNameGroupRepository,
                                 Gson gson, ModelMapper modelMapper,
@@ -44,7 +62,7 @@ public class ScheduleGroupService {
         this.infoAboutNameEmployeeRepository = infoAboutNameEmployeeRepository;
     }
 
-
+    @Transactional
     public void saveScheduleToDatabaseFromApi(String groupNumber) {
         String apiUrl = "https://iis.bsuir.by/api/v1/schedule?studentGroup=" + groupNumber;
         InfoAboutNameGroupEntity infoAboutNameGroupFromDb = infoAboutNameGroupRepository.findByName(groupNumber);

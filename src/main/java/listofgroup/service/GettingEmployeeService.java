@@ -8,6 +8,7 @@ import listofgroup.entity.InfoAboutNameEmployeeEntity;
 import listofgroup.model.InfoAboutNameEmployeeDto;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
@@ -26,7 +27,7 @@ public class GettingEmployeeService {
         this.modelMapper = modelMapper;
         this.infoAboutNameEmployeeRepository = infoAboutNameEmployeeRepository;
     }
-
+    @Transactional
     public void saveAllEmployeeToDatabaseFromApi() {
         String urlApi = "https://iis.bsuir.by/api/v1/employees/all";
 
