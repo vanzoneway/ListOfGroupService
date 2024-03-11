@@ -1,11 +1,18 @@
 package listofgroup.dao;
 
-import listofgroup.entity.InfoAboutNameGroupEntity;
+import listofgroup.model.InfoAboutNameGroup;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface InfoAboutNameGroupRepository extends JpaRepository<InfoAboutNameGroupEntity, Integer> {
-        InfoAboutNameGroupEntity findByName(String name);
+public interface InfoAboutNameGroupRepository extends JpaRepository<InfoAboutNameGroup, Integer> {
+
+        @EntityGraph(attributePaths = {
+                "infoAboutNameEmployeeList",
+                "generalInfoGroup.scheduleListMap",
+                "generalInfoGroup.scheduleListMap.schedules"
+        })
+        InfoAboutNameGroup findByName(String name);
 
 }

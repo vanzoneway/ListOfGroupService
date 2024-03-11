@@ -4,8 +4,8 @@ package listofgroup.service;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import listofgroup.dao.InfoAboutNameEmployeeRepository;
-import listofgroup.entity.InfoAboutNameEmployeeEntity;
-import listofgroup.model.InfoAboutNameEmployeeDto;
+import listofgroup.model.InfoAboutNameEmployee;
+import listofgroup.dto.InfoAboutNameEmployeeDto;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,18 +41,18 @@ public class GettingEmployeeService {
 
         List<InfoAboutNameEmployeeDto> employeeDtoList = gson.fromJson(response, new TypeToken<List<InfoAboutNameEmployeeDto>>() {}.getType());
         assert employeeDtoList != null;
-        List<InfoAboutNameEmployeeEntity> employeeEntityList = employeeDtoList
+        List<InfoAboutNameEmployee> employeeEntityList = employeeDtoList
                 .stream()
-                .map(dto -> modelMapper.map(dto, InfoAboutNameEmployeeEntity.class))
+                .map(dto -> modelMapper.map(dto, InfoAboutNameEmployee.class))
                 .toList();
 
         if(infoAboutNameEmployeeRepository.findAll().isEmpty()) {
             infoAboutNameEmployeeRepository.saveAll(employeeEntityList);
         }else {
-            for(InfoAboutNameEmployeeEntity employee : employeeEntityList) {
+            for(InfoAboutNameEmployee employee : employeeEntityList) {
                 if(infoAboutNameEmployeeRepository.existsById(employee.getId())) {
 
-                    InfoAboutNameEmployeeEntity infoAboutNameEmployeeFromDb = infoAboutNameEmployeeRepository.findById(employee.getId());
+                    InfoAboutNameEmployee infoAboutNameEmployeeFromDb = infoAboutNameEmployeeRepository.findById(employee.getId());
                     infoAboutNameEmployeeFromDb.setFirstName(employee.getFirstName());
                     infoAboutNameEmployeeFromDb.setLastName(employee.getLastName());
                     infoAboutNameEmployeeFromDb.setEmail(employee.getEmail());

@@ -1,4 +1,4 @@
-package listofgroup.entity;
+package listofgroup.model;
 
 import jakarta.persistence.*;
 import lombok.Setter;
@@ -11,19 +11,19 @@ import java.util.List;
 @Table(name = "info_about_name_group")
 @Getter
 @Setter
-public class InfoAboutNameGroupEntity {
+public class InfoAboutNameGroup {
     @Id
     private int id;
 
     @OneToOne
     @JoinColumn(name = "general_info_group")
-    private GeneralInfoGroupEntity generalInfoGroup;
+    private GeneralInfoGroup generalInfoGroup;
 
     @ManyToMany
     @JoinTable(name="groups_employees",
             joinColumns = @JoinColumn(name = "info_about_name_group_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "info_about_name_employee_id", referencedColumnName = "id") )
-    List<InfoAboutNameEmployeeEntity> infoAboutNameEmployeeList = new ArrayList<>();
+    List<InfoAboutNameEmployee> infoAboutNameEmployeeList = new ArrayList<>();
 
     @Column(name = "name")
     private String name;

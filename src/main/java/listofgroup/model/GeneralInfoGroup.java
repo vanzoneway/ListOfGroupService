@@ -1,4 +1,4 @@
-package listofgroup.entity;
+package listofgroup.model;
 
 import jakarta.persistence.*;
 import java.util.Map;
@@ -9,17 +9,17 @@ import lombok.Getter;
 @Table(name = "general_info_group")
 @Getter
 @Setter
-public class GeneralInfoGroupEntity {
+public class GeneralInfoGroup {
 
     @Id
     private int id;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    private InfoAboutNameGroupEntity infoAboutNameGroup;
+    @OneToOne(mappedBy = "generalInfoGroup", cascade = CascadeType.ALL)
+    private InfoAboutNameGroup infoAboutNameGroup;
 
     @OneToMany(mappedBy = "generalInfoGroup", cascade = CascadeType.ALL)
     @MapKeyColumn(name = "day_of_week")
-    Map<String, ScheduleListEntity> scheduleListMap;
+    Map<String, ScheduleList> scheduleListMap;
 
     @Column(name="start_date")
     private String startDate;

@@ -1,4 +1,4 @@
-package listofgroup.model;
+package listofgroup.dto;
 
 
 import lombok.Getter;

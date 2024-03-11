@@ -1,4 +1,4 @@
-package listofgroup.entity;
+package listofgroup.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -9,15 +9,15 @@ import lombok.Setter;
 @Table(name = "schedule")
 @Getter
 @Setter
-public class ScheduleEntity {
+public class Schedule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_list_id")
-    private ScheduleListEntity scheduleList;
+    private ScheduleList scheduleList;
 
     @Column(name = "lesson_type_abbrev")
     private String lessonTypeAbbrev;

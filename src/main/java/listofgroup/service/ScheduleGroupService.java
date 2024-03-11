@@ -5,11 +5,11 @@ import com.google.gson.*;
 import listofgroup.dao.GeneralInfoGroupRepository;
 import listofgroup.dao.InfoAboutNameEmployeeRepository;
 import listofgroup.dao.InfoAboutNameGroupRepository;
-import listofgroup.entity.*;
-import listofgroup.model.GeneralInfoGroupDto;
-import listofgroup.model.InfoAboutNameEmployeeDto;
-import listofgroup.model.InfoAboutNameGroupDto;
-import listofgroup.model.ScheduleDto;
+import listofgroup.model.*;
+import listofgroup.dto.GeneralInfoGroupDto;
+import listofgroup.dto.InfoAboutNameEmployeeDto;
+import listofgroup.dto.InfoAboutNameGroupDto;
+import listofgroup.dto.ScheduleDto;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.http.HttpStatus;
@@ -36,7 +36,7 @@ public class ScheduleGroupService {
 
     @Transactional
     public ResponseEntity<String> removeGroupFromDatabase(String groupNumber) {
-        GeneralInfoGroupEntity generalInfoGroup = infoAboutNameGroupRepository.findByName(groupNumber).getGeneralInfoGroup();
+        GeneralInfoGroup generalInfoGroup = infoAboutNameGroupRepository.findByName(groupNumber).getGeneralInfoGroup();
 
         if (generalInfoGroup != null) {
             try {
@@ -65,7 +65,7 @@ public class ScheduleGroupService {
     @Transactional
     public void saveScheduleToDatabaseFromApi(String groupNumber) {
         String apiUrl = "https://iis.bsuir.by/api/v1/schedule?studentGroup=" + groupNumber;
-        InfoAboutNameGroupEntity infoAboutNameGroupFromDb = infoAboutNameGroupRepository.findByName(groupNumber);
+        InfoAboutNameGroup infoAboutNameGroupFromDb = infoAboutNameGroupRepository.findByName(groupNumber);
 
         WebClient webClient = WebClient.create();
 
@@ -83,17 +83,17 @@ public class ScheduleGroupService {
             JsonObject infoAboutNameGroupJson = jsonResponse.getAsJsonObject("studentGroupDto");
 
             GeneralInfoGroupDto generalInfoGroupDto = gson.fromJson(jsonResponse, GeneralInfoGroupDto.class);
-            GeneralInfoGroupEntity generalInfoGroup = modelMapper.map(generalInfoGroupDto, GeneralInfoGroupEntity.class);
+            GeneralInfoGroup generalInfoGroup = modelMapper.map(generalInfoGroupDto, GeneralInfoGroup.class);
 
             InfoAboutNameGroupDto infoAboutNameGroupDto = gson.fromJson(infoAboutNameGroupJson, InfoAboutNameGroupDto.class);
-            InfoAboutNameGroupEntity infoAboutNameGroup = modelMapper.map(infoAboutNameGroupDto, InfoAboutNameGroupEntity.class);
+            InfoAboutNameGroup infoAboutNameGroup = modelMapper.map(infoAboutNameGroupDto, InfoAboutNameGroup.class);
 
             JsonObject schedulesJson = jsonResponse.getAsJsonObject("schedules");
 
             TypeToken<HashMap<String, JsonArray>> typeToken = new TypeToken<>() {};
 
             Map<String, JsonArray> schedulesJsonMap = gson.fromJson(schedulesJson, typeToken.getType());
-            Map<String, ScheduleListEntity> schedulesEntityMap = new HashMap<>();
+            Map<String, ScheduleList> schedulesEntityMap = new HashMap<>();
 
             convertSchedulesJsonMapToEntityMap
                     (schedulesJsonMap,
@@ -115,17 +115,17 @@ public class ScheduleGroupService {
     }
 
     private void convertSchedulesJsonMapToEntityMap(Map<String, JsonArray> schedulesJsonMap,
-                                                    Map<String, ScheduleListEntity> schedulesEntityMap,
-                                                    GeneralInfoGroupEntity generalInfoGroup,
-                                                    InfoAboutNameGroupEntity infoAboutNameGroup) {
+                                                    Map<String, ScheduleList> schedulesEntityMap,
+                                                    GeneralInfoGroup generalInfoGroup,
+                                                    InfoAboutNameGroup infoAboutNameGroup) {
 
         for(Map.Entry<String, JsonArray> entry : schedulesJsonMap.entrySet()){
-            ScheduleListEntity scheduleList = new ScheduleListEntity();
-            scheduleList.setScheduleList(gson.fromJson(entry.getValue(), new TypeToken<List<ScheduleEntity>>(){}.getType()));
+            ScheduleList scheduleList = new ScheduleList();
+            scheduleList.setSchedules(gson.fromJson(entry.getValue(), new TypeToken<List<Schedule>>(){}.getType()));
             scheduleList.setGeneralInfoGroup(generalInfoGroup);
 
-            for(ScheduleEntity scheduleEntity : scheduleList.getScheduleList()){
-                scheduleEntity.setScheduleList(scheduleList);
+            for(Schedule schedule : scheduleList.getSchedules()){
+                schedule.setScheduleList(scheduleList);
             }
             for(JsonElement innerSchedulesJson : entry.getValue()) {
                 JsonArray schedulesJsonArray = innerSchedulesJson.getAsJsonObject()
@@ -136,7 +136,7 @@ public class ScheduleGroupService {
                             .getAsJsonPrimitive("id")
                             .getAsInt();
 
-                    InfoAboutNameEmployeeEntity infoAboutNameEmployee = infoAboutNameEmployeeRepository.findById(employeeId);
+                    InfoAboutNameEmployee infoAboutNameEmployee = infoAboutNameEmployeeRepository.findById(employeeId);
 
                     if (!infoAboutNameEmployee.getInfoAboutNameGroupList().contains(infoAboutNameGroup)
                             && !infoAboutNameGroup.getInfoAboutNameEmployeeList().contains(infoAboutNameEmployee)) {
@@ -154,12 +154,13 @@ public class ScheduleGroupService {
 
     public String getGeneralInfoGroupAsJsonString(String groupNumber) {
 
-        InfoAboutNameGroupEntity infoAboutNameGroupFromDb = infoAboutNameGroupRepository.findByName(groupNumber);
+        //Entity Graph here to avoid a lot of select to database
+        InfoAboutNameGroup infoAboutNameGroupFromDb = infoAboutNameGroupRepository.findByName(groupNumber);
 
         if (infoAboutNameGroupFromDb == null)
             return "Not found";
 
-        GeneralInfoGroupEntity generalInfoGroup= infoAboutNameGroupFromDb.getGeneralInfoGroup();
+        GeneralInfoGroup generalInfoGroup= infoAboutNameGroupFromDb.getGeneralInfoGroup();
 
 
         String generalInfoGroupJsonString = gson.toJson(modelMapper.map(generalInfoGroup, GeneralInfoGroupDto.class));
@@ -172,12 +173,12 @@ public class ScheduleGroupService {
 
         Map<String, JsonObject> schedulesJsonMap = new HashMap<>();
 
-        for(Map.Entry<String, ScheduleListEntity> entry : generalInfoGroup.getScheduleListMap().entrySet()) {
+        for(Map.Entry<String, ScheduleList> entry : generalInfoGroup.getScheduleListMap().entrySet()) {
             JsonObject schedulesListJson = new JsonObject();
             int i = 0;
 
-            for(ScheduleEntity scheduleEntity : entry.getValue().getScheduleList()) {
-                String elementOfListJsonString = gson.toJson(modelMapper.map(scheduleEntity, ScheduleDto.class));
+            for(Schedule schedule : entry.getValue().getSchedules()) {
+                String elementOfListJsonString = gson.toJson(modelMapper.map(schedule, ScheduleDto.class));
                 JsonObject elementOfListJson = JsonParser.parseString(elementOfListJsonString).getAsJsonObject();
                 elementOfListJson.remove("id");
                 schedulesListJson.add(Integer.toString(i++), elementOfListJson);
@@ -199,13 +200,13 @@ public class ScheduleGroupService {
 
     }
 
-    private JsonObject allEmployeesJsonInLine (InfoAboutNameGroupEntity infoAboutNameGroupFromDb) {
+    private JsonObject allEmployeesJsonInLine (InfoAboutNameGroup infoAboutNameGroupFromDb) {
 
-        List<InfoAboutNameEmployeeEntity> employees = infoAboutNameGroupFromDb.getInfoAboutNameEmployeeList();
+        List<InfoAboutNameEmployee> employees = infoAboutNameGroupFromDb.getInfoAboutNameEmployeeList();
         JsonObject jsonObject = new JsonObject();
 
         int i = 0;
-        for(InfoAboutNameEmployeeEntity employee : employees) {
+        for(InfoAboutNameEmployee employee : employees) {
             JsonObject employeeJson = JsonParser
                     .parseString(gson.toJson(modelMapper.map(employee, InfoAboutNameEmployeeDto.class)))
                     .getAsJsonObject();

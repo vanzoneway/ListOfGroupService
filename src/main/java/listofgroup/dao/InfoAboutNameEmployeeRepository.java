@@ -1,11 +1,11 @@
 package listofgroup.dao;
 
-import listofgroup.entity.InfoAboutNameEmployeeEntity;
+import listofgroup.model.InfoAboutNameEmployee;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface InfoAboutNameEmployeeRepository extends JpaRepository<InfoAboutNameEmployeeEntity, Integer> {
+public interface InfoAboutNameEmployeeRepository extends JpaRepository<InfoAboutNameEmployee, Integer> {
 
         boolean existsById (int id);
-        InfoAboutNameEmployeeEntity findById(int id);
+        InfoAboutNameEmployee findById(int id);
 
 }

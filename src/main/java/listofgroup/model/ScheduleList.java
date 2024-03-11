@@ -1,4 +1,4 @@
-package listofgroup.entity;
+package listofgroup.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -9,19 +9,19 @@ import java.util.List;
 @Table(name = "schedule_list")
 @Getter
 @Setter
-public class ScheduleListEntity {
+public class ScheduleList {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "general_info_group_id")
-    GeneralInfoGroupEntity generalInfoGroup;
+    GeneralInfoGroup generalInfoGroup;
 
     @OneToMany(mappedBy = "scheduleList", cascade = CascadeType.ALL)
     @OrderColumn(name = "schedule_index")
-    private List<ScheduleEntity> scheduleList;
+    private List<Schedule> schedules;
 
 
 
