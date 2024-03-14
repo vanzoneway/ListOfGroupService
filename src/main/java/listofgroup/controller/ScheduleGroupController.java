@@ -5,10 +5,7 @@ import listofgroup.dao.InfoAboutNameEmployeeRepository;
 import listofgroup.service.ScheduleGroupService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -25,13 +22,11 @@ public class ScheduleGroupController {
     }
 
 
-    @GetMapping(value = "/schedule/{groupNumber}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public String getSchedule(@PathVariable String groupNumber) {
+    @GetMapping(value = "/getSchedule/{groupNumber}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> getSchedule(@PathVariable String groupNumber) {
 
         if(infoAboutNameEmployeeRepository.findAll().isEmpty())
-            return "You have to do GET-response: /getEmployee first of all!";
-
-        scheduleGroupService.saveScheduleToDatabaseFromApi(groupNumber);
+            return ResponseEntity.ok("You have to do GET-response: /getEmployee first of all!");
 
         return scheduleGroupService.getGeneralInfoGroupAsJsonString(groupNumber);
     }
@@ -39,6 +34,11 @@ public class ScheduleGroupController {
     @DeleteMapping("/removeGroupFromDatabase/{groupNumber}")
     public ResponseEntity<String> removeGroup(@PathVariable String groupNumber) {
         return scheduleGroupService.removeGroupFromDatabase(groupNumber);
+    }
+
+    @PostMapping(value = "/postSchedule/{groupNumber}")
+    public ResponseEntity<String> postGroup(@PathVariable String groupNumber) {
+        return scheduleGroupService.saveScheduleToDatabaseFromApi(groupNumber);
     }
 
 }

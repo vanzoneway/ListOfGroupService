@@ -2,6 +2,7 @@ package listofgroup.service;
 
 
 import com.google.gson.*;
+import listofgroup.cache.EntityCache;
 import listofgroup.dao.GeneralInfoGroupRepository;
 import listofgroup.dao.InfoAboutNameEmployeeRepository;
 import listofgroup.dao.InfoAboutNameGroupRepository;
@@ -22,6 +23,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 
 @Service
@@ -31,14 +33,17 @@ public class ScheduleGroupService {
     private final Gson gson;
     private final ModelMapper modelMapper;
     private final GeneralInfoGroupRepository generalInfoGroupRepository;
+    private final EntityCache<Integer, Object> cacheMap;
 
     private final listofgroup.dao.InfoAboutNameEmployeeRepository infoAboutNameEmployeeRepository;
 
     @Transactional
     public ResponseEntity<String> removeGroupFromDatabase(String groupNumber) {
-        GeneralInfoGroup generalInfoGroup = infoAboutNameGroupRepository.findByName(groupNumber).getGeneralInfoGroup();
 
-        if (generalInfoGroup != null) {
+
+        if (infoAboutNameGroupRepository.findByName(groupNumber) != null) {
+            GeneralInfoGroup generalInfoGroup = infoAboutNameGroupRepository.findByName(groupNumber).getGeneralInfoGroup();
+            cacheMap.remove(Objects.hashCode(generalInfoGroup));
             try {
                 generalInfoGroupRepository.delete(generalInfoGroup);
                 return ResponseEntity.ok("Group removed successfully");
@@ -46,69 +51,83 @@ public class ScheduleGroupService {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
         } else {
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok("Already removed");
         }
     }
 
     public ScheduleGroupService(InfoAboutNameGroupRepository infoAboutNameGroupRepository,
                                 Gson gson, ModelMapper modelMapper,
-                                GeneralInfoGroupRepository generalInfoGroupRepository,
+                                GeneralInfoGroupRepository generalInfoGroupRepository, EntityCache<Integer, Object> cacheMap,
                                 InfoAboutNameEmployeeRepository infoAboutNameEmployeeRepository) {
 
         this.infoAboutNameGroupRepository = infoAboutNameGroupRepository;
         this.gson = gson;
         this.modelMapper = modelMapper;
         this.generalInfoGroupRepository = generalInfoGroupRepository;
+        this.cacheMap = cacheMap;
         this.infoAboutNameEmployeeRepository = infoAboutNameEmployeeRepository;
     }
 
     @Transactional
-    public void saveScheduleToDatabaseFromApi(String groupNumber) {
+    public ResponseEntity<String> saveScheduleToDatabaseFromApi(String groupNumber) {
         String apiUrl = "https://iis.bsuir.by/api/v1/schedule?studentGroup=" + groupNumber;
         InfoAboutNameGroup infoAboutNameGroupFromDb = infoAboutNameGroupRepository.findByName(groupNumber);
 
         WebClient webClient = WebClient.create();
 
-        if (infoAboutNameGroupFromDb == null) {
+        try {
+            if (infoAboutNameGroupFromDb == null) {
 
 
-            String response = webClient.get()
-                    .uri(apiUrl).accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
+                String response = webClient.get()
+                        .uri(apiUrl).accept(MediaType.APPLICATION_JSON)
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block();
 
-            assert response != null;
-            JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
-            JsonObject infoAboutNameGroupJson = jsonResponse.getAsJsonObject("studentGroupDto");
+                assert response != null;
+                JsonObject jsonResponse = JsonParser.parseString(response).getAsJsonObject();
+                JsonObject infoAboutNameGroupJson = jsonResponse.getAsJsonObject("studentGroupDto");
 
-            GeneralInfoGroupDto generalInfoGroupDto = gson.fromJson(jsonResponse, GeneralInfoGroupDto.class);
-            GeneralInfoGroup generalInfoGroup = modelMapper.map(generalInfoGroupDto, GeneralInfoGroup.class);
+                GeneralInfoGroupDto generalInfoGroupDto = gson.fromJson(jsonResponse, GeneralInfoGroupDto.class);
+                GeneralInfoGroup generalInfoGroup = modelMapper.map(generalInfoGroupDto, GeneralInfoGroup.class);
 
-            InfoAboutNameGroupDto infoAboutNameGroupDto = gson.fromJson(infoAboutNameGroupJson, InfoAboutNameGroupDto.class);
-            InfoAboutNameGroup infoAboutNameGroup = modelMapper.map(infoAboutNameGroupDto, InfoAboutNameGroup.class);
+                InfoAboutNameGroupDto infoAboutNameGroupDto = gson.fromJson(infoAboutNameGroupJson, InfoAboutNameGroupDto.class);
+                InfoAboutNameGroup infoAboutNameGroup = modelMapper.map(infoAboutNameGroupDto, InfoAboutNameGroup.class);
 
-            JsonObject schedulesJson = jsonResponse.getAsJsonObject("schedules");
+                JsonObject schedulesJson = jsonResponse.getAsJsonObject("schedules");
 
-            TypeToken<HashMap<String, JsonArray>> typeToken = new TypeToken<>() {};
+                TypeToken<HashMap<String, JsonArray>> typeToken = new TypeToken<>() {
+                };
 
-            Map<String, JsonArray> schedulesJsonMap = gson.fromJson(schedulesJson, typeToken.getType());
-            Map<String, ScheduleList> schedulesEntityMap = new HashMap<>();
+                Map<String, JsonArray> schedulesJsonMap = gson.fromJson(schedulesJson, typeToken.getType());
+                Map<String, ScheduleList> schedulesEntityMap = new HashMap<>();
 
-            convertSchedulesJsonMapToEntityMap
-                    (schedulesJsonMap,
-                    schedulesEntityMap,
-                    generalInfoGroup,
-                    infoAboutNameGroup);
+                convertSchedulesJsonMapToEntityMap
+                        (schedulesJsonMap,
+                                schedulesEntityMap,
+                                generalInfoGroup,
+                                infoAboutNameGroup);
 
-            generalInfoGroup.setInfoAboutNameGroup(infoAboutNameGroup);
-            generalInfoGroup.setId(infoAboutNameGroup.getId());
+                generalInfoGroup.setInfoAboutNameGroup(infoAboutNameGroup);
+                generalInfoGroup.setId(infoAboutNameGroup.getId());
 
-            infoAboutNameGroup.setGeneralInfoGroup(generalInfoGroup);
+                infoAboutNameGroup.setGeneralInfoGroup(generalInfoGroup);
 
-            generalInfoGroup.setScheduleListMap(schedulesEntityMap);
+                generalInfoGroup.setScheduleListMap(schedulesEntityMap);
 
-            generalInfoGroupRepository.save(generalInfoGroup);
+                generalInfoGroupRepository.save(generalInfoGroup);
+                cacheMap.put(
+                        Objects.hashCode(generalInfoGroup),
+                        generalInfoGroup
+                );
+
+                return ResponseEntity.ok("Group saved successfully");
+            } else {
+                return ResponseEntity.ok("Already existed");
+            }
+        }catch(Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
 
 
@@ -152,52 +171,64 @@ public class ScheduleGroupService {
         }
     }
 
-    public String getGeneralInfoGroupAsJsonString(String groupNumber) {
+    public ResponseEntity<String> getGeneralInfoGroupAsJsonString(String groupNumber) {
+
+        InfoAboutNameGroup infoAboutNameGroupFromDb;
 
         //Entity Graph here to avoid a lot of select to database
-        InfoAboutNameGroup infoAboutNameGroupFromDb = infoAboutNameGroupRepository.findByName(groupNumber);
+        try {
+            int hashCode = Objects.hashCode(groupNumber);
+            Object cachedData = cacheMap.get(hashCode);
 
-        if (infoAboutNameGroupFromDb == null)
-            return "Not found";
-
-        GeneralInfoGroup generalInfoGroup= infoAboutNameGroupFromDb.getGeneralInfoGroup();
-
-
-        String generalInfoGroupJsonString = gson.toJson(modelMapper.map(generalInfoGroup, GeneralInfoGroupDto.class));
-        JsonObject mainJson = JsonParser.parseString(generalInfoGroupJsonString).getAsJsonObject();
-
-        String infoAboutNameGroupJsonString = gson.toJson(modelMapper.map(infoAboutNameGroupFromDb, InfoAboutNameGroupDto.class));
-        JsonObject infoAboutNameGroupJson = JsonParser.parseString(infoAboutNameGroupJsonString).getAsJsonObject();
-        mainJson.add("studentGroupDto", infoAboutNameGroupJson);
-        mainJson.remove("id");
-
-        Map<String, JsonObject> schedulesJsonMap = new HashMap<>();
-
-        for(Map.Entry<String, ScheduleList> entry : generalInfoGroup.getScheduleListMap().entrySet()) {
-            JsonObject schedulesListJson = new JsonObject();
-            int i = 0;
-
-            for(Schedule schedule : entry.getValue().getSchedules()) {
-                String elementOfListJsonString = gson.toJson(modelMapper.map(schedule, ScheduleDto.class));
-                JsonObject elementOfListJson = JsonParser.parseString(elementOfListJsonString).getAsJsonObject();
-                elementOfListJson.remove("id");
-                schedulesListJson.add(Integer.toString(i++), elementOfListJson);
+            if (cachedData != null) {
+                infoAboutNameGroupFromDb = (InfoAboutNameGroup) cachedData;
+            }else {
+                infoAboutNameGroupFromDb = infoAboutNameGroupRepository.findByName(groupNumber);
+                cacheMap.put(hashCode, infoAboutNameGroupFromDb);
             }
-            schedulesJsonMap.put(entry.getKey(), schedulesListJson);
+
+
+            if (infoAboutNameGroupFromDb == null)
+                return ResponseEntity.ok("Group not found");
+
+            GeneralInfoGroup generalInfoGroup = infoAboutNameGroupFromDb.getGeneralInfoGroup();
+
+
+            String generalInfoGroupJsonString = gson.toJson(modelMapper.map(generalInfoGroup, GeneralInfoGroupDto.class));
+            JsonObject mainJson = JsonParser.parseString(generalInfoGroupJsonString).getAsJsonObject();
+
+            String infoAboutNameGroupJsonString = gson.toJson(modelMapper.map(infoAboutNameGroupFromDb, InfoAboutNameGroupDto.class));
+            JsonObject infoAboutNameGroupJson = JsonParser.parseString(infoAboutNameGroupJsonString).getAsJsonObject();
+            mainJson.add("studentGroupDto", infoAboutNameGroupJson);
+            mainJson.remove("id");
+
+            Map<String, JsonObject> schedulesJsonMap = new HashMap<>();
+
+            for (Map.Entry<String, ScheduleList> entry : generalInfoGroup.getScheduleListMap().entrySet()) {
+                JsonObject schedulesListJson = new JsonObject();
+                int i = 0;
+
+                for (Schedule schedule : entry.getValue().getSchedules()) {
+                    String elementOfListJsonString = gson.toJson(modelMapper.map(schedule, ScheduleDto.class));
+                    JsonObject elementOfListJson = JsonParser.parseString(elementOfListJsonString).getAsJsonObject();
+                    elementOfListJson.remove("id");
+                    schedulesListJson.add(Integer.toString(i++), elementOfListJson);
+                }
+                schedulesJsonMap.put(entry.getKey(), schedulesListJson);
+            }
+
+            JsonObject schedulesJsonMapInLine = new JsonObject();
+            for (Map.Entry<String, JsonObject> entry : schedulesJsonMap.entrySet()) {
+                schedulesJsonMapInLine.add(entry.getKey(), entry.getValue());
+            }
+
+            mainJson.add("allEmployees", allEmployeesJsonInLine(infoAboutNameGroupFromDb));
+            mainJson.add("schedules", schedulesJsonMapInLine);
+
+            return ResponseEntity.ok(gson.toJson(mainJson));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        JsonObject schedulesJsonMapInLine = new JsonObject();
-        for(Map.Entry<String, JsonObject> entry : schedulesJsonMap.entrySet()) {
-            schedulesJsonMapInLine.add(entry.getKey(), entry.getValue());
-        }
-
-        mainJson.add("allEmployees", allEmployeesJsonInLine(infoAboutNameGroupFromDb));
-        mainJson.add("schedules", schedulesJsonMapInLine);
-
-
-
-        return gson.toJson(mainJson);
-
     }
 
     private JsonObject allEmployeesJsonInLine (InfoAboutNameGroup infoAboutNameGroupFromDb) {

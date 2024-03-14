@@ -7,6 +7,10 @@ import listofgroup.dao.InfoAboutNameEmployeeRepository;
 import listofgroup.model.InfoAboutNameEmployee;
 import listofgroup.dto.InfoAboutNameEmployeeDto;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -69,6 +73,34 @@ public class GettingEmployeeService {
         }
 
 
+    }
+
+
+    public ResponseEntity<String> getEmployeeByPrefix(String prefix) {
+        try{
+            if(infoAboutNameEmployeeRepository.findAll().isEmpty()) {
+                return ResponseEntity.ok("Post employee at the beginning");
+            }
+            String mainJson = gson.toJson(infoAboutNameEmployeeRepository
+                    .findByBeginOfName(prefix)
+                    .stream()
+                    .map(m -> modelMapper.map(m, InfoAboutNameEmployeeDto.class))
+                    .toList());
+            return ResponseEntity.ok(mainJson);
+        }catch(Exception e) {
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+        return ResponseEntity.ok(" ");
+    }
+
+    public Page<InfoAboutNameEmployee> getAllEmployees(Integer offset, Integer limit) {
+        if (offset == null || offset < 0) {
+            offset = 0;
+        }
+        if(limit == null || limit < 1) {
+            limit = 10;
+        }
+        return infoAboutNameEmployeeRepository.findAll(PageRequest.of(offset, limit));
     }
 
 }

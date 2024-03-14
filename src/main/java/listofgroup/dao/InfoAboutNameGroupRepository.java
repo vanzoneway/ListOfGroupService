@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 public interface InfoAboutNameGroupRepository extends JpaRepository<InfoAboutNameGroup, Integer> {
 
         @EntityGraph(attributePaths = {
-                "infoAboutNameEmployeeList",
                 "generalInfoGroup.scheduleListMap",
                 "generalInfoGroup.scheduleListMap.schedules"
         })

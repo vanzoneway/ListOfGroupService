@@ -74,25 +74,59 @@ The application will start on `http://localhost:8080`.
 
   You have to do it as 1st step to get the schedule of group
 
+- **Writes schedule of group in MySQL:**
+
+  ```http
+  POST /getEmployees
+  ```
+  
+  You have to do it as 2d step to get the schedule of group
+
 - **Get a schedule of group in BSUIR in JSON and write it in Database MySQL:**
 
   ```http
   GET /schedule/{groupNumber}
   ```
+- **Displays a list of all employees whose names start with the letters {prefix}.**
 
+  ```http
+  GET /getEmployeeStartedWith/{prefix}
+  ```
+
+- **Displays a page with all employees of BSUIR, where the default page number {offset} is 1, and the number of employees {limit} is 10.**
+
+  ```http
+  GET /getAllEmployees
+  ```
+  
 - **Delete all information about group from MySQL:**
 
   ```http
   DELETE /removeGroupFromDatabase/{groupNumber}
   ```
 
+
   Example:
   ```http
   POST /getEmployees
   ```
+
+  ```http
+  POST /postSchedule/250502
+  ```
+
   ```http
   GET /schedule/250502
   ```
+
+  ```http
+  GET /getEmployeeStartedWith/Ирина
+  ```  
+
+  ```http
+  GET /getAllEmployees?offset=1&limit=10
+  ```
+
   ```http
   DELETE /removeGroupFromDatabase/250502
   ```
